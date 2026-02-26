@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>원판 룰렛 (올랜덤)</title>
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      padding: 20px;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #0f172a;
+      color: #e5e7eb;
+    }
+
+    .roulette-container {
+      max-width: 700px;
+      margin: 0 auto;
+      background: #020617;
+      border-radius: 20px;
+      padding: 24px 24px 32px;
+      box-shadow: 0 16px 40px rgba(0,0,0,0.6);
+      border: 1px solid #111827;
+    }
+
+    h1 {
+      margin: 0 0 10px;
+      text-align: center;
+      font-size: 24px;
+      color: #f9fafb;
+    }
+
+    .desc {
+      font-size: 13px;
+      text-align: center;
+      color: #9ca3af;
+      margin-bottom: 12px;
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 70px;
+      border-radius: 12px;
+      border: 1px solid #374151;
+      background: #020617;
+      color: #e5e7eb;
+      padding: 10px 12px;
+      resize: vertical;
+      font-size: 14px;
+    }
+
+    textarea::placeholder {
+      color: #6b7280;
+    }
+
+    .controls {
+      margin-top: 10px;
+      text-align: center;
+    }
+
+    button {
+      padding: 8px 20px;
+      border-radius: 999px;
+      border: none;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+      background: linear-gradient(135deg, #f97316, #ec4899);
+      color: #020617;
+      box-shadow: 0 6px 16px rgba(248, 113, 113, 0.5);
+      transition: transform 0.1s ease, box-shadow 0.1s ease, opacity 0.2s;
+    }
+
+    button:active {
+      transform: translateY(1px);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.6);
+    }
+
+    button:disabled {
+      opacity: 0.5;
+      cursor: default;
+      box-shadow: none;
+    }
+
+    .canvas-wrap {
+      margin-top: 18px;
+      display: flex;
+      justify-content: center;
+    }
+
+    canvas {
+      background: radial-gradient(circle at 30% 20%, #1f2937 0, #020617 55%);
+      border-radius: 50%;
+    }
+
+    .result {
+      margin-top: 16px;
+      text-align: center;
+      font-size: 18px;
+      font-weight: 700;
+      min-height: 24px;
+    }
+
+    .result span {
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: #fbbf24;
+      color: #111827;
+    }
+
+    @media (max-width: 500px) {
+      .roulette-container {
+        padding: 18px 14px 24px;
+      }
+      canvas {
+        width: 280px !important;
+        height: 280px !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="roulette-container">
+    <h1>원판 룰렛</h1>
+    <div class="desc">
+      콤마(,)로 항목을 나눠 적고 "돌리기" 버튼을 누르면 원판이 회전해요.
+    </div>
+    <textarea id="itemsInput" placeholder="예) 치킨, 피자, 햄버거, 떡볶이"></textarea>
+    <div class="controls">
+      <button id="spinBtn">룰렛 돌리기</button>
+    </div>
+
+    <div class="canvas-wrap">
+      <canvas id="wheelCanvas" width="360" height="360"></canvas>
+    </div>
+
+    <div class="result" id="resultText"></div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('wheelCanvas');
+    const ctx = canvas.getContext('2d');
+    const itemsInput = document.getElementById('itemsInput');
+    const spinBtn = document.getElementById('spinBtn');
+    const resultText = document.getElementById('resultText');
+
+    let items = ['치킨', '피자', '햄버거', '떡볶이']; // 초기 예시
+    let rotation = 0;      // 현재 회전 각도 (라디안)
+    let spinning = false;  // 스핀 중 여부
+
+    function drawWheel() {
+      const w = canvas.width;
+      const h = canvas.height;
+      const cx = w / 2;
+      const cy = h / 2;
+      const radius = Math.min(w, h) / 2 - 15;
+
+      ctx.clearRect(0, 0, w, h);
+
+      if (!items || items.length === 0) {
+        ctx.fillStyle = '#9ca3af';
+        ctx.font = '14px system-ui, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('항목을 입력해 주세요', cx, cy);
+        drawPointer(cx, cy, radius);
+        return;
+      }
+
+      const sliceAngle = (2 * Math.PI) / items.length;
+
+      ctx.save();
+      ctx.translate(cx, cy);
+      ctx.rotate(rotation);
+
+      const colors = ['#f97316', '#fb7185', '#22c55e', '#3b82f6', '#eab308', '#a855f7'];
+
+      for (let i = 0; i < items.length; i++) {
+        const startAngle = -Math.PI / 2 + i * sliceAngle;
+        const endAngle = startAngle + sliceAngle;
+
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.arc(0, 0, radius, startAngle, endAngle);
+        ctx.closePath();
+        ctx.fillStyle = colors[i % colors.length];
+        ctx.fill();
+        ctx.strokeStyle = '#111827';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        const midAngle = startAngle + sliceAngle / 2;
+        const textRadius = radius * 0.65;
+        const tx = Math.cos(midAngle) * textRadius;
+        const ty = Math.sin(midAngle) * textRadius;
+
+        ctx.save();
+        ctx.translate(tx, ty);
+        ctx.rotate(midAngle);
+        ctx.fillStyle = '#111827';
+        ctx.font = '14px system-ui, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+
+        let label = items[i];
+        if (label.length > 10) {
+          label = label.slice(0, 9) + '…';
+        }
+        ctx.fillText(label, 0, 0);
+        ctx.restore();
+      }
+
+      ctx.beginPath();
+      ctx.arc(0, 0, radius * 0.22, 0, 2 * Math.PI);
+      ctx.fillStyle = '#020617';
+      ctx.fill();
+      ctx.strokeStyle = '#111827';
+      ctx.lineWidth = 3;
+      ctx.stroke();
+
+      ctx.restore();
+
+      drawPointer(cx, cy, radius);
+    }
+
+    function drawPointer(cx, cy, radius) {
+      ctx.save();
+      ctx.translate(cx, cy);
+
+      ctx.beginPath();
+      ctx.moveTo(0, -radius - 4);
+      ctx.lineTo(-12, -radius - 32);
+      ctx.lineTo(12, -radius - 32);
+      ctx.closePath();
+      ctx.fillStyle = '#facc15';
+      ctx.fill();
+      ctx.strokeStyle = '#f59e0b';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      ctx.restore();
+    }
+
+    function readItemsFromInput() {
+      const raw = itemsInput.value.split(',')
+        .map(v => v.trim())
+        .filter(v => v.length > 0);
+
+      if (raw.length >= 2) {
+        items = raw;
+      } else {
+        alert('최소 2개 이상 항목을 입력해 주세요.');
+        return false;
+      }
+      return true;
+    }
+
+    function spinWheel() {
+      if (spinning) return;
+      if (!readItemsFromInput()) return;
+      if (!items || items.length === 0) return;
+
+      const n = items.length;
+      const sliceAngle = (2 * Math.PI) / n;
+
+      // 1) 먼저 올랜덤으로 당첨 인덱스를 뽑는다.
+      const chosenIndex = Math.floor(Math.random() * n);
+
+      // 2) 그 인덱스에 해당하는 각도 구간 안에서 랜덤 위치 선택
+      const u = Math.random(); // 0~1
+      const x = chosenIndex * sliceAngle + u * sliceAngle; // [chosen*slice, (chosen+1)*slice)
+
+      // 3) 여러 바퀴 돈 뒤 그 위치에 멈추도록 목표 회전각 설정
+      const fullSpins = 4 + Math.floor(Math.random() * 3); // 4,5,6바퀴
+      const targetRotation = 2 * Math.PI * fullSpins - x;
+
+      const duration = 4000;
+      let startTime = null;
+      const startRotation = 0;
+      rotation = 0;
+
+      spinning = true;
+      spinBtn.disabled = true;
+      resultText.innerHTML = '';
+
+      function animate(time) {
+        if (!startTime) startTime = time;
+        const elapsed = time - startTime;
+        let t = elapsed / duration;
+        if (t > 1) t = 1;
+
+        const eased = 1 - Math.pow(1 - t, 3);
+
+        rotation = startRotation + (targetRotation - startRotation) * eased;
+        drawWheel();
+
+        if (t < 1) {
+          requestAnimationFrame(animate);
+        } else {
+          spinning = false;
+          spinBtn.disabled = false;
+          showResult();
+        }
+      }
+
+      requestAnimationFrame(animate);
+    }
+
+    function showResult() {
+      if (!items || items.length === 0) return;
+      const sliceAngle = (2 * Math.PI) / items.length;
+
+      let x = -rotation % (2 * Math.PI);
+      if (x < 0) x += 2 * Math.PI;
+      const index = Math.floor(x / sliceAngle);
+
+      const winner = items[index];
+      resultText.innerHTML = `결과: <span>${winner}</span>`;
+    }
+
+    spinBtn.addEventListener('click', spinWheel);
+
+    itemsInput.value = items.join(', ');
+    drawWheel();
+  </script>
+</body>
+</html>

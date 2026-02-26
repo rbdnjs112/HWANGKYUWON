@@ -1,0 +1,780 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>Nintendo 홈</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- React + Babel CDN -->
+  <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <style>
+    * { box-sizing: border-box; }
+
+    body{
+      margin:0;
+      background:#111827;
+      font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+      color:#111827;
+    }
+
+    .site-root{
+      min-height:100vh;
+      display:flex;
+      flex-direction:column;
+    }
+
+.global-header{
+  position:sticky;
+  top:0;
+  z-index:50;
+  background:#ffffff;
+  border-bottom:3px solid #e5e7eb;
+  box-shadow:0 2px 4px rgba(15,23,42,0.08);
+}
+
+.header-inner{
+  width:100%;
+  margin:0;
+  height:80px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:0 24px 0 8px;
+}
+
+.header-left{
+  display:flex;
+  align-items:center;
+}
+
+.home-logo{
+  border:none;
+  background:transparent;
+  padding:0;
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  text-decoration:none;
+  color:#111827;
+}
+
+.home-logo span{
+  font-size:22px;
+  font-weight:900;
+  letter-spacing:0.08em;
+  text-transform:uppercase;
+}
+
+.header-center{
+  flex:1;
+  display:flex;
+  justify-content:center;
+  gap:32px;
+}
+
+.nav-item{
+  position:relative;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:4px;
+  cursor:pointer;
+  padding:4px 2px;
+  min-width:80px;
+}
+
+.nav-link-inner{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:4px;
+  text-decoration:none;
+}
+
+.nav-icon-placeholder{
+  width:32px;
+  height:32px;
+}
+
+.nav-label{
+  font-size:14px;
+  font-weight:700;
+  white-space:nowrap;
+  color:#111827;
+}
+
+.nav-label.active{
+  color:#2563eb;
+}
+
+.nav-item::after{
+  content:"";
+  position:absolute;
+  left:50%;
+  bottom:-10px;
+  transform:translateX(-50%);
+  width:0;
+  height:3px;
+  background:#2563eb;
+  border-radius:999px;
+  transition:width 0.16s ease-out;
+}
+
+.nav-item:hover::after{
+  width:60%;
+}
+
+.nav-item.active::after{
+  width:80%;
+}
+
+.header-right{
+  display:flex;
+  align-items:center;
+  gap:16px;
+  padding-right:4px;
+}
+
+.header-right a{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+
+.ext-icon{
+  width:32px;
+  height:32px;
+  cursor:pointer;
+  border:none;
+  background:transparent;
+  padding:0;
+  transition:transform 0.12s ease-out, filter 0.12s ease-out;
+  display:block;
+}
+
+.header-right a:hover .ext-icon{
+  transform:scale(1.05);
+  filter:brightness(1.05);
+}
+
+.dropdown{
+  position:absolute;
+  top:100%;
+  left:50%;
+  transform:translateX(-50%);
+  margin-top:10px;
+  background:#ffffff;
+  border-radius:12px;
+  border:1px solid #d1d5db;
+  box-shadow:0 8px 16px rgba(15,23,42,0.18);
+  min-width:180px;
+  overflow:hidden;
+  z-index:60;
+  display:none;
+}
+
+.nav-item:hover .dropdown{
+  display:block;
+}
+
+.header-center .nav-item.open .dropdown{
+  display:block;
+}
+
+.header-center .nav-item::before{
+  content:"";
+  position:absolute;
+  top:100%;
+  left:0;
+  width:100%;
+  height:10px;
+}
+
+.dropdown-item{
+  display:block;
+  width:100%;
+  padding:9px 14px;
+  font-size:14px;
+  font-weight:500;
+  text-align:center;
+  border-bottom:1px solid #e5e7eb;
+  background:#ffffff;
+  color:#111827;
+  text-decoration:none;
+  white-space:nowrap;
+}
+
+.dropdown-item:last-child{
+  border-bottom:none;
+}
+
+.dropdown-item:hover{
+  background:#f3f4f6;
+}
+
+    /* ========== 메인 : 풀스크린 슬라이드 ========== */
+    .main-wrap{
+      flex:1;
+      background:#020617;
+    }
+
+    .slider-root{
+      width:100%;
+      height:calc(100vh - 80px);      
+      max-height:780px;
+      position:relative;
+      overflow:hidden;
+      background:#000;
+    }
+
+    .slider-bg{
+      position:absolute;
+      inset:0;
+      background-size:contain;
+      background-position:center;
+      background-repeat:no-repeat;
+      transform:scale(1.02);
+      transition:background-image 0.4s ease-out;
+      cursor:pointer;
+    }
+
+    .slider-gradient-bar{
+      position:absolute;
+      left:0;
+      right:0;
+      bottom:0;
+      height:90px;
+      background: linear-gradient(90deg, #ff0000 0%, #ff0000 0%, #ffffff 100%);
+    }
+
+    .slider-center-panel{
+      position:absolute;
+      left:50%;
+      bottom:24px;
+      transform:translateX(-50%);
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      gap:10px;
+      color:#f9fafb;
+    }
+
+    .event-banner{
+      display:flex;
+      align-items:center;
+      gap:12px;
+      padding:9px 22px;
+      border-radius:999px;
+      background:rgba(15,23,42,0.9);
+      box-shadow:0 4px 10px rgba(15,23,42,0.7);
+      font-size:13px;
+      font-weight:600;
+    }
+
+    .event-link{
+      text-decoration:none;
+      color:#f9fafb;
+      padding:4px 10px;
+      border-radius:999px;
+      background:transparent;
+      transition:background 0.12s ease-out, color 0.12s ease-out;
+    }
+
+    .event-link:hover{
+      background:#f9fafb;
+      color:#111827;
+    }
+
+    .event-dot{
+      width:4px;
+      height:4px;
+      border-radius:999px;
+      background:#e5e7eb;
+    }
+
+    .slider-arrow{
+      position:absolute;
+      top:50%;
+      transform:translateY(-50%);
+      width:64px;
+      height:64px;
+      border-radius:999px;
+      border:none;
+      background:#ffffff;
+      box-shadow:0 4px 10px rgba(15,23,42,0.35);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      cursor:pointer;
+      font-size:26px;
+      color:#111827;
+      opacity:0.9;
+      transition:transform 0.12s ease-out, box-shadow 0.12s ease-out, opacity 0.12s ease-out;
+    }
+
+    .slider-arrow:hover{
+      transform:translateY(-50%) scale(1.05);
+      box-shadow:0 6px 14px rgba(15,23,42,0.45);
+      opacity:1;
+    }
+
+    .slider-arrow.left{
+      left:40px;
+    }
+    .slider-arrow.right{
+      right:40px;
+    }
+
+    .slider-dots{
+  position:absolute;
+  bottom:100px;
+  left:50%;
+  transform:translateX(-50%);
+  display:flex;
+  gap:6px;
+  z-index:70;
+}
+    .slider-dot{
+      width:8px;
+      height:8px;
+      border-radius:999px;
+      background:rgba(15,23,42,0.35);
+    }
+    .slider-dot.active{
+      width:22px;
+      background:#f9fafb;
+    }
+
+    @media (max-width:900px){
+      .header-inner{
+        padding:0 12px 0 8px;
+        height:72px;
+      }
+      .header-center{
+        gap:18px;
+      }
+      .home-logo span{
+        font-size:20px;
+      }
+      .slider-root{
+        height:calc(100vh - 72px);
+      }
+      .slider-arrow{
+        width:52px;
+        height:52px;
+        font-size:22px;
+      }
+      .slider-arrow.left{ left:18px; }
+      .slider-arrow.right{ right:18px; }
+    }
+
+    @media (max-width:600px){
+      .header-center{
+        gap:12px;
+      }
+      .nav-label{
+        font-size:12px;
+      }
+      .slider-gradient-bar{
+        height:70px;
+      }
+      .event-banner{
+        padding:7px 16px;
+        font-size:12px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect } = React;
+
+    const EXT_ICONS = {
+      youtube: "images/icon-youtube.png",
+      blog:    "images/icon-blog.png",
+      cafe:    "images/icon-cafe.png",
+    };
+
+    const EXTERNAL_LINKS = {
+      youtube: "https://www.youtube.com/@HWANG_KYUWON",
+      blog:    "https://blog.naver.com/rbdnjs119",
+      cafe:    "https://cafe.naver.com/rbdnjs119",
+    };
+
+    const EVENT_NOTICE_LINKS = {
+      event: "nintendo/event/event.html",
+      notice: "nintendo/notice/notice.html",
+    };
+
+    const TAB_ORDER = [
+      "pokemon",
+      "animalcrossing",
+      "mario",
+      "zelda",
+      "kirby",
+      "nintendo",
+      "etc"
+    ];
+
+    const TAB_INFO = {
+      pokemon:        { label:"포켓몬스터",  folder:"pokemon" },
+      animalcrossing: { label:"동물의 숲",   folder:"animalcrossing" },
+      mario:          { label:"마리오",      folder:"mario" },
+      zelda:          { label:"젤다의 전설", folder:"zelda" },
+      kirby:          { label:"별의 커비",   folder:"kirby" },
+      nintendo:       { label:"닌텐도 게임", folder:"nintendo" },
+      etc:            { label:"기타",        folder:"etc" },
+    };
+
+    const DROPDOWNS = {
+      pokemon: [
+        { id:"gb",     label:"GB",     link:"pokemon/gb/rg.html" },
+        { id:"gba",    label:"GBA",    link:"pokemon/gba/rs.html" },
+        { id:"nds",    label:"NDS",    link:"pokemon/nds/dp.html" },
+        { id:"3ds",    label:"3DS",    link:"pokemon/3ds/xy.html" },
+        { id:"switch", label:"SWITCH", link:"pokemon/switch/lple.html" },
+        { id:"mobile", label:"모바일", link:"pokemon/mobile/mobile.html" },
+        { id:"etc",    label:"기타",   link:"pokemon/etc/etc.html" },
+      ],
+      animalcrossing: [
+        { id:"64",          label:"동물의 숲 64",      link:"animalcrossing/64/index.html" },
+        { id:"eplus",       label:"동물의숲+/e+",      link:"animalcrossing/eplus/index.html" },
+        { id:"wildworld",   label:"놀러오세요",        link:"animalcrossing/wildworld/index.html" },
+        { id:"cityfolk",    label:"타운으로 놀러가요", link:"animalcrossing/cityfolk/index.html" },
+        { id:"newleaf",     label:"튀어나와요",        link:"animalcrossing/newleaf/index.html" },
+        { id:"newhorizons", label:"모여봐요",          link:"animalcrossing/newhorizons/index.html" },
+        { id:"etc",         label:"기타",              link:"animalcrossing/etc/index.html" },
+      ],
+      mario: [
+        { id:"64", label:"64", link:"mario/64/index.html" },
+        { id:"gb", label:"GB", link:"mario/gb/index.html" },
+        { id:"gba",   label:"GBA",       link:"mario/gba/index.html" },
+        { id:"nds",  label:"NDS",       link:"mario/nds/index.html" },
+        { id:"wii", label:"Wii/U",     link:"mario/wii/index.html" },
+        { id:"3ds", label:"3DS", link:"mario/3ds/index.html" },
+        { id:"switch", label:"SWITCH", link:"mario/switch/index.html" },
+        { id:"etc",    label:"기타",              link:"mario/etc/index.html" },
+      ],
+      zelda: [
+        { id:"gb",     label:"GB",     link:"zelda/gb/index.html" },
+        { id:"gba",    label:"GBA",    link:"zelda/gba/index.html" },
+        { id:"nds",    label:"NDS",    link:"zelda/nds/index.html" },
+        { id:"wii",    label:"Wii",    link:"zelda/wii/index.html" },
+        { id:"3ds",    label:"3DS",    link:"zelda/3ds/index.html" },
+        { id:"switch", label:"SWITCH", link:"zelda/switch/index.html" },
+        { id:"etc",    label:"기타",   link:"zelda/etc/index.html" },
+      ],
+      kirby: [
+        { id:"gb",     label:"GB",     link:"kirby/gb/index.html" },
+        { id:"gba",    label:"GBA",    link:"kirby/gba/index.html" },
+        { id:"nds",    label:"NDS",    link:"kirby/nds/index.html" },
+        { id:"wii",    label:"Wii",    link:"kirby/wii/index.html" },
+        { id:"3ds",    label:"3DS",    link:"kirby/3ds/index.html" },
+        { id:"switch", label:"SWITCH", link:"kirby/switch/index.html" },
+        { id:"etc",    label:"기타",   link:"kirby/etc/index.html" },
+      ],
+      nintendo: [
+        { id:"classic", label:"패미컴/슈패미", link:"nintendo/classic/index.html" },
+        { id:"n64gc",   label:"N64/게임큐브", link:"nintendo/n64gc/index.html" },
+        { id:"gb",      label:"GB/GBA",       link:"nintendo/gb/index.html" },
+        { id:"nds",     label:"NDS",          link:"nintendo/nds/index.html" },
+        { id:"wii",     label:"Wii/Wii U",    link:"nintendo/wii/index.html" },
+        { id:"3ds",     label:"3DS",          link:"nintendo/3ds/index.html" },
+        { id:"switch",  label:"SWITCH",       link:"nintendo/switch/index.html" },
+        { id:"mobile",  label:"모바일",       link:"nintendo/mobile/index.html" },
+        { id:"etc",     label:"기타",         link:"nintendo/etc/index.html" },
+      ],
+      etc: [
+        { id:"private",  label:"사설서버", link:"" },
+        { id:"roulette", label:"룰렛",     link:"" },
+        { id:"original", label:"창작 게임", link:"" },
+        { id:"banpick",  label:"모의밴픽", link:"../loldraft.html" },
+        { id:"contact",  label:"문의사항", link:"" },
+      ],
+    };
+
+    const SLIDES = [
+      {
+        id: 1,
+        image: "images/slide1.png",
+        link:  "https://www.youtube.com/@HWANG_KYUWON",
+        label: "슬라이드 1",
+      },
+      {
+        id: 2,
+        image: "images/slide2.png",
+        link:  "https://youtu.be/f_MtgtXKhPs?si=UJoZSIYycW6iI28J",
+        label: "슬라이드 2",
+      },
+      {
+        id: 3,
+        image: "images/slide3.png",
+        link:  "#",
+        label: "슬라이드 3",
+      },
+    ];
+
+    function App(){
+      const [openDropdown, setOpenDropdown] = useState(null);
+      const [slideIndex, setSlideIndex] = useState(0);
+
+useEffect(() => {
+  if (SLIDES.length <= 1) return;
+
+  const timer = setTimeout(() => {
+    setSlideIndex(prev => (prev + 1) % SLIDES.length);
+  }, 5000);
+
+  return () => clearTimeout(timer);
+}, [slideIndex]);
+
+      const handleHome = () => {
+        window.location.href = "index.html";
+      };
+
+      const handleNavClick = (tabKey) => {
+        setOpenDropdown(prev => prev === tabKey ? null : tabKey);
+      };
+
+      const handleDropdownItemClick = (item) => {
+        setOpenDropdown(null);
+        if (item.link) {
+          window.location.href = item.link;
+        } else {
+          alert(`"${item.label}" 페이지는 아직 준비 중입니다.\n나중에 link만 채우면 돼.`);
+        }
+      };
+
+      const handleExternalClick = (key) => {
+        window.open(EXTERNAL_LINKS[key], "_blank", "noopener");
+      };
+
+      const showPrevSlide = () => {
+        setSlideIndex(prev =>
+          (prev - 1 + SLIDES.length) % SLIDES.length
+        );
+      };
+
+      const showNextSlide = () => {
+        setSlideIndex(prev =>
+          (prev + 1) % SLIDES.length
+        );
+      };
+
+      const handleSlideClick = () => {
+        const slide = SLIDES[slideIndex];
+        if (slide.link && slide.link !== "#") {
+          window.location.href = slide.link;
+        }
+      };
+
+      const currentSlide = SLIDES[slideIndex] || SLIDES[0];
+
+      return (
+        <div className="site-root">
+<header className="global-header">
+  <div className="header-inner">
+    <div className="header-left">
+      <a href="index.html" className="home-logo">
+        <span>HWANG KYUWON</span>
+      </a>
+    </div>
+
+<nav className="header-center">
+  <div className="nav-item">
+    <a href="nintendo/pokemon/gb/rg.html" className="nav-link-inner">
+      <div className="nav-icon-placeholder"></div>
+      <div className="nav-label">포켓몬스터</div>
+    </a>
+    <div className="dropdown">
+      <a href="nintendo/pokemon/gb/rg.html" className="dropdown-item">GB</a>
+      <a href="nintendo/pokemon/gba/rs.html" className="dropdown-item">GBA</a>
+      <a href="nintendo/pokemon/nds/dp.html" className="dropdown-item">NDS</a>
+      <a href="nintendo/pokemon/3ds/xy.html" className="dropdown-item">3DS</a>
+      <a href="nintendo/pokemon/switch/lple.html" className="dropdown-item">SWITCH</a>
+      <a href="nintendo/pokemon/mobile/mobile.html" className="dropdown-item">모바일</a>
+      <a href="nintendo/pokemon/etc/etc.html" className="dropdown-item">기타</a>
+    </div>
+  </div>
+
+  <div className="nav-item">
+    <a href="nintendo/animalcrossing/animalcrossing.html" className="nav-link-inner">
+      <div className="nav-icon-placeholder"></div>
+      <div className="nav-label">동물의 숲</div>
+    </a>
+    <div className="dropdown">
+      <a href="nintendo/animalcrossing/animalcrossing.html" className="dropdown-item">동물의 숲</a>
+    </div>
+  </div>
+
+  <div className="nav-item">
+    <a href="nintendo/mario/fc/mario.html" className="nav-link-inner">
+      <div className="nav-icon-placeholder"></div>
+      <div className="nav-label">마리오</div>
+    </a>
+    <div className="dropdown">
+      <a href="nintendo/mario/fc/mario.html" className="dropdown-item">FC</a>
+      <a href="nintendo/mario/64/mario.html" className="dropdown-item">64</a>
+      <a href="nintendo/mario/gb/mario.html" className="dropdown-item">GB</a>
+      <a href="nintendo/mario/gba/mario.html" className="dropdown-item">GBA</a>
+      <a href="nintendo/mario/nds/mario.html" className="dropdown-item">NDS</a>
+      <a href="nintendo/mario/wii/mario.html" className="dropdown-item">Wii/U</a>
+      <a href="nintendo/mario/3ds/mario.html" className="dropdown-item">3DS</a>
+      <a href="nintendo/mario/switch/mario.html" className="dropdown-item">SWITCH</a>
+      <a href="nintendo/mario/etc/mario.html" className="dropdown-item">기타</a>
+    </div>
+  </div>
+
+  <div className="nav-item">
+    <a href="nintendo/zelda/fc/zelda.html" className="nav-link-inner">
+      <div className="nav-icon-placeholder"></div>
+      <div className="nav-label">젤다의 전설</div>
+    </a>
+    <div className="dropdown">
+      <a href="nintendo/zelda/fc/zelda.html" className="dropdown-item">FC</a>
+      <a href="nintendo/zelda/gb/zelda.html" className="dropdown-item">GB</a>
+      <a href="nintendo/zelda/gba/zelda.html" className="dropdown-item">GBA</a>
+      <a href="nintendo/zelda/nds/zelda.html" className="dropdown-item">NDS</a>
+      <a href="nintendo/zelda/wii/zelda.html" className="dropdown-item">Wii</a>
+      <a href="nintendo/zelda/3ds/zelda.html" className="dropdown-item">3DS</a>
+      <a href="nintendo/zelda/switch/zelda.html" className="dropdown-item">SWITCH</a>
+      <a href="nintendo/zelda/etc/zelda.html" className="dropdown-item">기타</a>
+    </div>
+  </div>
+
+  <div className="nav-item">
+    <a href="nintendo/kirby/fc/kirby.html" className="nav-link-inner">
+      <div className="nav-icon-placeholder"></div>
+      <div className="nav-label">별의 커비</div>
+    </a>
+    <div className="dropdown">
+      <a href="nintendo/kirby/fc/kirby.html" className="dropdown-item">FC</a>
+      <a href="nintendo/kirby/gb/kirby.html" className="dropdown-item">GB</a>
+      <a href="nintendo/kirby/gba/kirby.html" className="dropdown-item">GBA</a>
+      <a href="nintendo/kirby/nds/kirby.html" className="dropdown-item">NDS</a>
+      <a href="nintendo/kirby/wii/kirby.html" className="dropdown-item">Wii</a>
+      <a href="nintendo/kirby/3ds/kirby.html" className="dropdown-item">3DS</a>
+      <a href="nintendo/kirby/switch/kirby.html" className="dropdown-item">SWITCH</a>
+      <a href="nintendo/kirby/etc/kirby.html" className="dropdown-item">기타</a>
+    </div>
+  </div>
+
+  <div className="nav-item">
+    <a href="nintendo/nintendo/fc/nintendo.html" className="nav-link-inner">
+      <div className="nav-icon-placeholder"></div>
+      <div className="nav-label">닌텐도 게임</div>
+    </a>
+    <div className="dropdown">
+      <a href="nintendo/nintendo/fc/nintendo.html" className="dropdown-item">FC</a>
+      <a href="nintendo/nintendo/64/nintendo.html" className="dropdown-item">64</a>
+      <a href="nintendo/nintendo/gb/nintendo.html" className="dropdown-item">GB</a>
+      <a href="nintendo/nintendo/gba/nintendo.html" className="dropdown-item">GBA</a>
+      <a href="nintendo/nintendo/nds/nintendo.html" className="dropdown-item">NDS</a>
+      <a href="nintendo/nintendo/wii/nintendo.html" className="dropdown-item">Wii/U</a>
+      <a href="nintendo/nintendo/3ds/nintendo.html" className="dropdown-item">3DS</a>
+      <a href="nintendo/nintendo/switch/nintendo.html" className="dropdown-item">SWITCH</a>
+      <a href="nintendo/nintendo/mobile/nintendo.html" className="dropdown-item">모바일</a>
+      <a href="nintendo/nintendo/etc/nintendo.html" className="dropdown-item">기타</a>
+    </div>
+  </div>
+
+  <div className="nav-item">
+    <a href="nintendo/etc/loldraft/loldraft.html" className="nav-link-inner">
+      <div className="nav-icon-placeholder"></div>
+      <div className="nav-label">기타</div>
+    </a>
+    <div className="dropdown">
+      <a href="nintendo/etc/loldraft/loldraft.html" className="dropdown-item">모의밴픽</a>
+    </div>
+  </div>
+</nav>
+
+    <div className="header-right">
+      <a href={EXTERNAL_LINKS.youtube} target="_blank" rel="noopener">
+        <img src={EXT_ICONS.youtube} alt="YouTube" className="ext-icon" />
+      </a>
+      <a href={EXTERNAL_LINKS.blog} target="_blank" rel="noopener">
+        <img src={EXT_ICONS.blog} alt="Blog" className="ext-icon" />
+      </a>
+      <a href={EXTERNAL_LINKS.cafe} target="_blank" rel="noopener">
+        <img src={EXT_ICONS.cafe} alt="Cafe" className="ext-icon" />
+      </a>
+    </div>
+  </div>
+</header>
+
+          <main className="main-wrap">
+            <div className="slider-root">
+              <div
+                className="slider-bg"
+                style={{ backgroundImage:`url(${currentSlide.image})` }}
+                onClick={handleSlideClick}
+              />
+
+              <div className="slider-gradient-bar" />
+              <div className="slider-center-panel">
+                <div className="event-banner">
+                  <a
+                    href={EVENT_NOTICE_LINKS.event}
+                    className="event-link"
+                  >
+                    이벤트
+                  </a>
+                  <div className="event-dot" />
+                  <a
+                    href={EVENT_NOTICE_LINKS.notice}
+                    className="event-link"
+                  >
+                    공지사항
+                  </a>
+                </div>
+              </div>
+
+              {SLIDES.length > 1 && (
+                <>
+                  <button
+                    type="button"
+                    className="slider-arrow left"
+                    onClick={showPrevSlide}
+                  >
+                    ‹
+                  </button>
+                  <button
+                    type="button"
+                    className="slider-arrow right"
+                    onClick={showNextSlide}
+                  >
+                    ›
+                  </button>
+
+                  <div className="slider-dots">
+                    {SLIDES.map((s, idx) => (
+                      <div
+                        key={s.id}
+                        className={
+                          "slider-dot" + (idx === slideIndex ? " active" : "")
+                        }
+                      />
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
+          </main>
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById("root"));
+    root.render(<App />);
+  </script>
+</body>
+</html>
