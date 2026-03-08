@@ -389,6 +389,223 @@
         font-size:12px;
       }
     }
+  
+
+
+/* =========================
+   MOBILE UI (<= 768px)
+   ========================= */
+.mobile-topbar,
+.mobile-drawer,
+.mobile-backdrop,
+.mobile-bottombar{
+  display:none;
+}
+
+@media (max-width:768px){
+  /* PC 헤더(로고/탭/아이콘)는 모바일에서 숨김 */
+  .header-left,
+  .header-center,
+  .header-right{
+    display:none !important;
+  }
+
+  .header-inner{
+    height:56px !important;
+    padding:0 12px !important;
+    justify-content:flex-start !important;
+    gap:12px;
+  }
+
+  /* 모바일 상단바 표시 */
+  .mobile-topbar{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    position:relative;
+    width:100%;
+    height:56px;
+  }
+
+  .mobile-menu-btn{
+    width:40px;
+    height:40px;
+    border:none;
+    background:transparent;
+    border-radius:10px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    cursor:pointer;
+    position:absolute;
+    left:0;
+  }
+
+  .mobile-menu-icon{
+    width:20px;
+    height:14px;
+    position:relative;
+  }
+  .mobile-menu-icon span{
+    position:absolute;
+    left:0;
+    right:0;
+    height:2px;
+    background:#111827;
+    border-radius:999px;
+  }
+  .mobile-menu-icon span:nth-child(1){ top:0; }
+  .mobile-menu-icon span:nth-child(2){ top:6px; }
+  .mobile-menu-icon span:nth-child(3){ top:12px; }
+
+  .mobile-home-btn{
+    text-align:center;
+    font-size:18px;
+    font-weight:900;
+    letter-spacing:0.08em;
+    text-transform:uppercase;
+    color:#111827;
+    text-decoration:none;
+    padding:0;
+  }
+
+  .mobile-right-spacer{
+    width:40px;
+    height:40px;
+    position:absolute;
+    right:0;
+  }
+
+  /* 슬라이더 높이: 상단바/하단바 고려 */
+  .slider-root{
+    height:calc(100vh - 56px - 64px) !important;
+    max-height:none !important;
+  }
+
+  .slider-dots{
+    bottom:92px !important;
+  }
+
+  .slider-arrow{
+    width:48px !important;
+    height:48px !important;
+    font-size:22px !important;
+  }
+  .slider-arrow.left{ left:12px !important; }
+  .slider-arrow.right{ right:12px !important; }
+
+  /* 하단 고정 바 */
+  .mobile-bottombar{
+    display:flex;
+    position:fixed;
+    left:0;
+    right:0;
+    bottom:0;
+    height:64px;
+    background:#ffffff;
+    border-top:1px solid #e5e7eb;
+    box-shadow:0 -6px 14px rgba(15,23,42,0.14);
+    z-index:80;
+    align-items:center;
+    justify-content:space-around;
+    padding:0 14px;
+  }
+
+  .mobile-bottom-item{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:6px;
+    text-decoration:none;
+    color:#111827;
+    font-size:11px;
+    font-weight:700;
+  }
+
+  .mobile-bottom-item img{
+    width:28px;
+    height:28px;
+    display:block;
+  }
+
+  /* 드로어(좌측 사이드 메뉴) */
+  .mobile-backdrop{
+    display:block;
+    position:fixed;
+    inset:0;
+    background:rgba(2,6,23,0.45);
+    z-index:90;
+    opacity:0;
+    pointer-events:none;
+    transition:opacity 0.18s ease-out;
+  }
+
+  .mobile-drawer{
+    display:block;
+    position:fixed;
+    top:0;
+    left:0;
+    height:100%;
+    width:min(78vw, 320px);
+    background:#ffffff;
+    z-index:100;
+    transform:translateX(-100%);
+    transition:transform 0.18s ease-out;
+    box-shadow:10px 0 20px rgba(15,23,42,0.18);
+    padding:14px 12px;
+    overflow:auto;
+  }
+
+  .drawer-header{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:4px 6px 12px;
+    border-bottom:1px solid #e5e7eb;
+    margin-bottom:10px;
+  }
+  .drawer-title{
+    font-weight:900;
+    letter-spacing:0.06em;
+  }
+  .drawer-close{
+    border:none;
+    background:transparent;
+    font-size:26px;
+    line-height:1;
+    cursor:pointer;
+    padding:6px 10px;
+    border-radius:10px;
+  }
+
+  .drawer-section{
+    margin-top:10px;
+  }
+  .drawer-link{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:12px 10px;
+    border-radius:12px;
+    text-decoration:none;
+    color:#111827;
+    font-weight:800;
+  }
+  .drawer-link:hover{
+    background:#f3f4f6;
+  }
+
+  /* open 상태 */
+  body.drawer-open .mobile-backdrop{
+    opacity:1;
+    pointer-events:auto;
+  }
+  body.drawer-open .mobile-drawer{
+    transform:translateX(0);
+  }
+}
+
   </style>
 </head>
 <body>
@@ -526,6 +743,13 @@
       const [openDropdown, setOpenDropdown] = useState(null);
       const [slideIndex, setSlideIndex] = useState(0);
 
+      const [drawerOpen, setDrawerOpen] = useState(false);
+
+      useEffect(() => {
+        document.body.classList.toggle("drawer-open", drawerOpen);
+        return () => document.body.classList.remove("drawer-open");
+      }, [drawerOpen]);
+
 useEffect(() => {
   if (SLIDES.length <= 1) return;
 
@@ -587,6 +811,24 @@ useEffect(() => {
         <span>HWANG KYUWON</span>
       </a>
     </div>
+
+
+    <div className="mobile-topbar">
+      <button
+        type="button"
+        className="mobile-menu-btn"
+        onClick={() => setDrawerOpen(true)}
+        aria-label="menu"
+      >
+        <div className="mobile-menu-icon">
+          <span></span><span></span><span></span>
+        </div>
+      </button>
+
+      <a href="home.html" className="mobile-home-btn">HOME</a>
+      <div className="mobile-right-spacer" aria-hidden="true"></div>
+    </div>
+
 
 <nav className="header-center">
   <div className="nav-item">
@@ -710,6 +952,65 @@ useEffect(() => {
     </div>
   </div>
 </header>
+
+
+<div
+  className="mobile-backdrop"
+  onClick={() => setDrawerOpen(false)}
+/>
+
+<aside className="mobile-drawer" role="dialog" aria-modal="true">
+  <div className="drawer-header">
+    <div className="drawer-title">MENU</div>
+    <button className="drawer-close" onClick={() => setDrawerOpen(false)} aria-label="close">×</button>
+  </div>
+
+  <div className="drawer-section">
+    <a className="drawer-link" href="nintendo/pokemon/gb/rg.html" onClick={() => setDrawerOpen(false)}>
+      포켓몬스터 <span>›</span>
+    </a>
+
+    <a className="drawer-link" href="nintendo/animalcrossing/animalcrossing.html" onClick={() => setDrawerOpen(false)}>
+      동물의 숲 <span>›</span>
+    </a>
+
+    <a className="drawer-link" href="nintendo/mario/fc/mario.html" onClick={() => setDrawerOpen(false)}>
+      마리오 <span>›</span>
+    </a>
+
+    <a className="drawer-link" href="nintendo/zelda/fc/zelda.html" onClick={() => setDrawerOpen(false)}>
+      젤다의 전설 <span>›</span>
+    </a>
+
+    <a className="drawer-link" href="nintendo/kirby/fc/kirby.html" onClick={() => setDrawerOpen(false)}>
+      별의 커비 <span>›</span>
+    </a>
+
+    <a className="drawer-link" href="nintendo/nintendo/fc/nintendo.html" onClick={() => setDrawerOpen(false)}>
+      닌텐도 게임 <span>›</span>
+    </a>
+
+    <a className="drawer-link" href="nintendo/etc/etc.html" onClick={() => setDrawerOpen(false)}>
+      기타 <span>›</span>
+    </a>
+  </div>
+</aside>
+
+<nav className="mobile-bottombar" aria-label="external links">
+  <a className="mobile-bottom-item" href={EXTERNAL_LINKS.youtube} target="_blank" rel="noopener">
+    <img src={EXT_ICONS.youtube} alt="YouTube" />
+    <div>YouTube</div>
+  </a>
+  <a className="mobile-bottom-item" href={EXTERNAL_LINKS.blog} target="_blank" rel="noopener">
+    <img src={EXT_ICONS.blog} alt="Blog" />
+    <div>Blog</div>
+  </a>
+  <a className="mobile-bottom-item" href={EXTERNAL_LINKS.cafe} target="_blank" rel="noopener">
+    <img src={EXT_ICONS.cafe} alt="Cafe" />
+    <div>Cafe</div>
+  </a>
+</nav>
+
 
           <main className="main-wrap">
             <div className="slider-root">
