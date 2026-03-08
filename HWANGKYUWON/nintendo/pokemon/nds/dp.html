@@ -918,5 +918,44 @@
       </div>
     </section>
   </main>
+
+    <nav class="mobile-bottombar" aria-label="external links">
+      <a class="mobile-bottom-item" href="https://www.youtube.com/@HWANG_KYUWON" target="_blank" rel="noopener">
+        <img src="../../../images/icon-youtube.png" alt="YouTube">
+        <div>YouTube</div>
+      </a>
+      <a class="mobile-bottom-item" href="https://blog.naver.com/rbdnjs119" target="_blank" rel="noopener">
+        <img src="../../../images/icon-blog.png" alt="Blog">
+        <div>Blog</div>
+      </a>
+      <a class="mobile-bottom-item" href="https://cafe.naver.com/rbdnjs119" target="_blank" rel="noopener">
+        <img src="../../../images/icon-cafe.png" alt="Cafe">
+        <div>Cafe</div>
+      </a>
+    </nav>
+  </div>
+
+  <script>
+    (function(){
+      const openBtn = document.getElementById('mobileMenuOpen');
+      const closeBtn = document.getElementById('mobileMenuClose');
+      const backdrop = document.getElementById('mobileBackdrop');
+
+      function openDrawer(){ document.body.classList.add('drawer-open'); }
+      function closeDrawer(){ document.body.classList.remove('drawer-open'); }
+
+      if(openBtn) openBtn.addEventListener('click', openDrawer);
+      if(closeBtn) closeBtn.addEventListener('click', closeDrawer);
+      if(backdrop) backdrop.addEventListener('click', closeDrawer);
+
+      const drawer = document.getElementById('mobileDrawer');
+      if(drawer){
+        drawer.addEventListener('click', function(e){
+          const a = e.target.closest('a');
+          if(a) closeDrawer();
+        });
+      }
+    })();
+  </script>
 </body>
 </html>
