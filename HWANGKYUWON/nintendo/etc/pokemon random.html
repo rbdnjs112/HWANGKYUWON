@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>포켓몬 랜덤 도감 뽑기 (전국 + 버전별)</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 20px;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #0b1120;
+      color: #e5e7eb;
+    }
+    .container {
+      max-width: 760px;
+      margin: 0 auto;
+      background: #020617;
+      border-radius: 18px;
+      padding: 24px 24px 30px;
+      border: 1px solid #1f2937;
+      box-shadow: 0 12px 32px rgba(0,0,0,0.6);
+    }
+    h1 {
+      margin: 0 0 10px;
+      font-size: 24px;
+      text-align: center;
+      color: #f9fafb;
+    }
+    .desc {
+      font-size: 13px;
+      text-align: center;
+      color: #9ca3af;
+      margin-bottom: 16px;
+      line-height: 1.5;
+    }
+
+    .version-select {
+      margin-bottom: 10px;
+    }
+    .version-label {
+      font-size: 13px;
+      margin-bottom: 6px;
+      color: #e5e7eb;
+    }
+    .version-buttons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .version-btn {
+      padding: 4px 10px;
+      border-radius: 999px;
+      border: 1px solid #374151;
+      background: #020617;
+      color: #e5e7eb;
+      font-size: 12px;
+      cursor: pointer;
+      transition: background 0.1s ease, color 0.1s ease, box-shadow 0.1s ease, transform 0.05s ease;
+    }
+    .version-btn.active {
+      background: linear-gradient(135deg, #22c55e, #0ea5e9);
+      color: #020617;
+      border-color: transparent;
+      box-shadow: 0 0 12px rgba(34,197,94,0.6);
+      font-weight: 700;
+      transform: translateY(-1px);
+    }
+
+    .row {
+      margin-top: 10px;
+      text-align: center;
+    }
+    .row label {
+      display: block;
+      font-size: 13px;
+      color: #9ca3af;
+      margin-bottom: 4px;
+    }
+    .row input[type="number"] {
+      width: 160px;
+      padding: 6px 10px;
+      border-radius: 10px;
+      border: 1px solid #374151;
+      background: #020617;
+      color: #e5e7eb;
+      font-size: 14px;
+      text-align: right;
+    }
+
+    .btn-area {
+      margin-top: 12px;
+      text-align: center;
+    }
+    .main-btn {
+      padding: 8px 20px;
+      border-radius: 999px;
+      border: none;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+      background: linear-gradient(135deg, #a855f7, #ec4899);
+      color: #020617;
+      box-shadow: 0 4px 14px rgba(168, 85, 247, 0.4);
+      transition: transform 0.1s ease, box-shadow 0.1s ease, opacity 0.2s;
+    }
+    .main-btn:active {
+      transform: translateY(1px);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.5);
+    }
+
+    .result {
+      margin-top: 18px;
+      text-align: center;
+      font-size: 22px;
+      font-weight: 800;
+      min-height: 28px;
+    }
+    .result span {
+      display: inline-block;
+      padding: 6px 16px;
+      border-radius: 999px;
+      background: #22c55e;
+      color: #020617;
+    }
+    .result small {
+      display: block;
+      font-size: 11px;
+      margin-top: 4px;
+      color: #9ca3af;
+    }
+
+    .history {
+      margin-top: 14px;
+      font-size: 12px;
+      color: #9ca3af;
+    }
+    .history strong {
+      color: #e5e7eb;
+    }
+
+    .data-hint {
+      margin-top: 18px;
+      padding-top: 10px;
+      border-top: 1px dashed #1f2937;
+      font-size: 11px;
+      color: #6b7280;
+      line-height: 1.5;
+    }
+    .data-hint code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      background: rgba(15,23,42,0.7);
+      padding: 2px 4px;
+      border-radius: 4px;
+    }
+
+    @media (max-width: 640px) {
+      .container {
+        padding: 18px 14px 24px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>포켓몬 랜덤 도감 뽑기</h1>
+    <div class="desc">
+      위에서 <strong>전국도감</strong> 또는 각 버전(DP, Pt, HGSS, BW, BW2, XY, ORAS, SM, USUM, LPLE, SwSh, BDSP, SV)을 선택한 뒤<br/>
+      “포켓몬 뽑기”를 누르면 해당 기준에 맞춰 랜덤으로 한 마리를 뽑습니다.
+    </div>
+
+    <!-- 버전 선택 -->
+    <div class="version-select">
+      <div class="version-label">기준 선택</div>
+      <div class="version-buttons">
+        <button class="version-btn active" data-version="NAT">전국도감</button>
+        <button class="version-btn" data-version="DP">DP</button>
+        <button class="version-btn" data-version="Pt">Pt</button>
+        <button class="version-btn" data-version="HGSS">HGSS</button>
+        <button class="version-btn" data-version="BW">BW</button>
+        <button class="version-btn" data-version="BW2">BW2</button>
+        <button class="version-btn" data-version="XY">XY</button>
+        <button class="version-btn" data-version="ORAS">ORAS</button>
+        <button class="version-btn" data-version="SM">SM</button>
+        <button class="version-btn" data-version="USUM">USUM</button>
+        <button class="version-btn" data-version="LPLE">LPLE</button>
+        <button class="version-btn" data-version="SwSh">SwSh</button>
+        <button class="version-btn" data-version="BDSP">BDSP</button>
+        <button class="version-btn" data-version="SV">SV</button>
+      </div>
+    </div>
+
+    <!-- 전국도감 전용: 최대 번호 입력 -->
+    <div class="row" id="natMaxRow">
+      <label for="natMax">전국도감 최대 도감 번호 (1 ~ 1025)</label>
+      <input id="natMax" type="number" min="1" max="1025" value="1025">
+    </div>
+
+    <div class="btn-area">
+      <button class="main-btn" id="drawBtn">포켓몬 뽑기</button>
+    </div>
+
+    <div class="result" id="resultBox"></div>
+    <div class="history" id="historyBox"></div>
+
+    <div class="data-hint">
+      <div><strong>데이터 입력 위치 안내 (자기가 직접 채우는 구역)</strong></div>
+      <div>1) 전국도감: <code>pokemonNames</code> 안에 <code>번호: '포켓몬 이름'</code> 형식으로 1~1025를 채우면, 전국도감 모드에서 사용됩니다.</div>
+      <div>2) 버전별 도감: <code>dexLists</code> 안에서 버전별로 같은 형식으로 채우면, 해당 버전 모드에서 사용됩니다.</div>
+    </div>
+  </div>
+
+  <script>
+    // ★★★ 전국도감 번호 → 포켓몬 이름 매핑 ★★★
+    // 1~1025 전국도감 번호에 맞게 채우면 됨.
+    // 지금은 1번 이상해씨만 예시로 넣어둔 상태.
+    const pokemonNames = {
+      1: '이상해씨',
+      2: '이상해풀',
+      3: '이상해꽃',
+      4: '파이리',
+      5: '리자드',
+      6: '리자몽',
+      7: '꼬부기',
+      8: '어니부기',
+      9: '거북왕',
+      // ...
+      // 151: '뮤',
+      // ...
+      // 1025: '복숭악동',
+    };
+
+    // ★★★ 버전별 도감 번호 → 포켓몬 이름 매핑 ★★★
+    // 각 버전마다 "해당 버전 기준 도감 번호"로 채우면 됨.
+    // 예시는 모두 1번 이상해씨만 넣어둠.
+    const dexLists = {
+      DP: {
+        1: '이상해씨',
+        // ...
+      },
+      Pt: {
+        1: '이상해씨',
+        // ...
+      },
+      HGSS: {
+        1: '이상해씨',
+        // ...
+      },
+      BW: {
+        1: '이상해씨',
+        // ...
+      },
+      BW2: {
+        1: '이상해씨',
+        // ...
+      },
+      XY: {
+        1: '이상해씨',
+        // ...
+      },
+      ORAS: {
+        1: '이상해씨',
+        // ...
+      },
+      SM: {
+        1: '이상해씨',
+        // ...
+      },
+      USUM: {
+        1: '이상해씨',
+        // ...
+      },
+      LPLE: {
+        1: '이상해씨',
+        // ...
+      },
+      SwSh: {
+        1: '이상해씨',
+        // ...
+      },
+      BDSP: {
+        1: '이상해씨',
+        // ...
+      },
+      SV: {
+        1: '이상해씨',
+        // ...
+      },
+    };
+
+    // ----------------- JS 로직 -----------------
+    const versionButtons = document.querySelectorAll('.version-btn');
+    const drawBtn = document.getElementById('drawBtn');
+    const resultBox = document.getElementById('resultBox');
+    const historyBox = document.getElementById('historyBox');
+    const natMaxRow = document.getElementById('natMaxRow');
+    const natMaxInput = document.getElementById('natMax');
+
+    let currentVersion = 'NAT'; // default: 전국도감
+    const history = []; // 최근 결과 6개 저장
+
+    // 버전 버튼 클릭 시
+    versionButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const v = btn.dataset.version;
+        currentVersion = v;
+
+        // active 표시 변경
+        versionButtons.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+
+        // 전국도감일 때만 최대 번호 입력 칸 보이기
+        if (currentVersion === 'NAT') {
+          natMaxRow.style.display = 'block';
+        } else {
+          natMaxRow.style.display = 'none';
+        }
+      });
+    });
+
+    function drawRandomPokemon() {
+      if (currentVersion === 'NAT') {
+        drawFromNationalDex();
+      } else {
+        drawFromVersionDex();
+      }
+    }
+
+    // 전국도감: 1 ~ natMax 사이에서 랜덤, 이름은 pokemonNames에서 조회
+    function drawFromNationalDex() {
+      let max = parseInt(natMaxInput.value, 10);
+
+      if (Number.isNaN(max) || max < 1) {
+        alert('전국도감 최대 번호는 1 이상이어야 합니다.');
+        return;
+      }
+      if (max > 1025) {
+        alert('전국도감 최대 번호는 1025(복숭악동)까지입니다.');
+        max = 1025;
+        natMaxInput.value = 1025;
+      }
+
+      const num = Math.floor(Math.random() * max) + 1; // 1~max
+      const name = pokemonNames[num] || '(미등록)';
+
+      showResult('전국도감', num, name);
+    }
+
+    // 버전별 도감: 해당 버전 객체의 key 목록에서 랜덤
+    function drawFromVersionDex() {
+      const dex = dexLists[currentVersion];
+
+      if (!dex) {
+        alert(currentVersion + ' 도감 정보가 없습니다.');
+        return;
+      }
+
+      const keys = Object.keys(dex)
+        .map(k => parseInt(k, 10))
+        .filter(n => !Number.isNaN(n));
+
+      if (keys.length === 0) {
+        alert(currentVersion + ' 버전에 아직 등록된 포켓몬이 없습니다.\ndexLists에 번호와 이름을 추가해 주세요.');
+        return;
+      }
+
+      const randomIndex = Math.floor(Math.random() * keys.length);
+      const num = keys[randomIndex];
+      const name = dex[num];
+
+      showResult(currentVersion, num, name);
+    }
+
+    // 화면에 결과+히스토리 표시 공통 함수
+    function showResult(versionLabel, num, name) {
+      resultBox.innerHTML = '';
+
+      const span = document.createElement('span');
+      span.textContent = `${num} - ${name}`;
+      resultBox.appendChild(span);
+
+      const small = document.createElement('small');
+      small.textContent = `기준: ${versionLabel}`;
+      resultBox.appendChild(small);
+
+      // 히스토리 (최대 6개)
+      history.unshift({ version: versionLabel, num, name });
+      if (history.length > 6) history.pop();
+
+      if (history.length) {
+        const text = history
+          .map(h => `${h.version}: ${h.num} - ${h.name}`)
+          .join(' / ');
+        historyBox.innerHTML = `<strong>최근 뽑힌 결과(최대 6개):</strong> ${text}`;
+      } else {
+        historyBox.innerHTML = '';
+      }
+    }
+
+    drawBtn.addEventListener('click', drawRandomPokemon);
+  </script>
+</body>
+</html>
