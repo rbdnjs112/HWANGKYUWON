@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>Space Star Sports - Easy Mode</title>
+  <style>
+    body {
+      background: #000;
+      margin: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      color: #fff;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+    #wrapper {
+      text-align: center;
+    }
+    canvas {
+      border: 4px solid #444;
+      background: #000011;
+      display: block;
+      margin: 0 auto 8px;
+    }
+    .info {
+      font-size: 13px;
+      line-height: 1.4;
+    }
+  </style>
+</head>
+<body>
+  <div id="wrapper">
+    <canvas id="game" width="800" height="500"></canvas>
+    <div class="info">
+      플레이어(하얀 우주복): ↑↓←→ (벽에 부딪히는 순간에만 방향 변경 가능)<br />
+      Space/Shift : 속도 업(비행 중에도 가능, 방향은 그대로 유지)<br />
+      AI(주황 우주복)보다 노란 별★을 더 많이 먹으면 승리 (10점 선취, R로 재시작)
+    </div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById("game");
+    const ctx = canvas.getContext("2d");
+
+    const WIN_SCORE = 10;
+
+    // 플레이어 (조금 더 빠르게)
+    const player = {
+      x: canvas.width * 0.25,
+      y: canvas.height * 0.5,
+      radius: 18,
+      baseSpeed: 3.0,
+      fastSpeed: 5.5,
+      vx: 2.5,
+      vy: -2.0,
+    };
+
+    // 적 AI (속도 크게 낮춰서 쉬운 난이도)
+    const enemy = {
+      x: canvas.width * 0.75,
+      y: canvas.height * 0.5,
+      radius: 18,
+      baseSpeed: 2.0,   // ★ 예전보다 확실히 느리게
+      vx: -1.5,
+      vy: 1.2,
+    };
+
+    // 키 상태
+    const pressed = {
+      ArrowUp: false,
+      ArrowDown: false,
+      ArrowLeft: false,
+      ArrowRight: false,
+      Space: false,
+      ShiftLeft: false,
+      ShiftRight: false,
+      KeyR: false,
+    };
+
+    let star = spawnStar();
+    let playerScore = 0;
+    let enemyScore = 0;
+    let gameOver = false;
+    let winnerMessage = "";
+    let lastTime = 0;
+
+    function resetGame() {
+      player.x = canvas.width * 0.25;
+      player.y = canvas.height * 0.5;
+      player.vx = 2.5;
+      player.vy = -2.0;
+
+      enemy.x = canvas.width * 0.75;
+      enemy.y = canvas.height * 0.5;
+      enemy.vx = -1.5;
+      enemy.vy = 1.2;
+
+      star = spawnStar();
+      playerScore = 0;
+      enemyScore = 0;
+      gameOver = false;
+      winnerMessage = "";
+    }
+
+    function spawnStar() {
+      const margin = 40;
+      const x = margin + Math.random() * (canvas.width - margin * 2);
+      const y = margin + Math.random() * (canvas.height - margin * 2);
+      return { x, y, radius: 12 }; // 별 크기 약간 키움
+    }
+
+    window.addEventListener("keydown", (e) => {
+      if (e.code in pressed) {
+        pressed[e.code] = true;
+        e.preventDefault();
+      }
+      if (e.code === "KeyR" && gameOver) {
+        resetGame();
+      }
+    });
+
+    window.addEventListener("keyup", (e) => {
+      if (e.code in pressed) {
+        pressed[e.code] = false;
+        e.preventDefault();
+      }
+    });
+
+    // 여러 방향키 조합 → 대각선까지 가능 (단, "벽에 부딪힌 순간"에만 사용)
+    function getInputDirection() {
+      let dx = 0;
+      let dy = 0;
+      if (pressed.ArrowLeft)  dx -= 1;
+      if (pressed.ArrowRight) dx += 1;
+      if (pressed.ArrowUp)    dy -= 1;
+      if (pressed.ArrowDown)  dy += 1;
+
+      if (dx === 0 && dy === 0) return null;
+      const len = Math.hypot(dx, dy);
+      return { dx: dx / len, dy: dy / len };
+    }
+
+    function currentSpeed() {
+      if (pressed.Space || pressed.ShiftLeft || pressed.ShiftRight) {
+        return player.fastSpeed;
+      }
+      return player.baseSpeed;
+    }
+
+    // 우주인 간단 버전 그리기
+    function drawAstronaut(x, y, size, colorType = "player") {
+      ctx.save();
+      ctx.translate(x, y);
+
+      const bodyWidth = size * 1.0;
+      const bodyHeight = size * 1.6;
+      const helmetRadius = size * 0.7;
+
+      const suitColor = colorType === "player" ? "#e5e7eb" : "#fed7aa";
+      const borderColor = colorType === "player" ? "#9ca3af" : "#ea580c";
+
+      // 몸통
+      ctx.fillStyle = suitColor;
+      ctx.strokeStyle = borderColor;
+      ctx.lineWidth = 2;
+      const bodyX = -bodyWidth / 2;
+      const bodyY = -bodyHeight / 2 + helmetRadius * 0.3;
+      ctx.beginPath();
+      ctx.rect(bodyX, bodyY, bodyWidth, bodyHeight);
+      ctx.fill();
+      ctx.stroke();
+
+      // 헬멧
+      ctx.beginPath();
+      ctx.fillStyle = "#ffffff";
+      ctx.strokeStyle = borderColor;
+      ctx.lineWidth = 2;
+      ctx.arc(0, -bodyHeight / 2, helmetRadius, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+
+      // 헬멧 유리창
+      ctx.beginPath();
+      ctx.fillStyle = "#111827";
+      ctx.arc(0, -bodyHeight / 2, helmetRadius * 0.75, 0, Math.PI * 2);
+      ctx.fill();
+
+      // 팔
+      ctx.strokeStyle = suitColor;
+      ctx.lineWidth = 5;
+      ctx.beginPath();
+      ctx.moveTo(bodyX, bodyY + bodyHeight * 0.1);
+      ctx.lineTo(bodyX - bodyWidth * 0.5, bodyY + bodyHeight * 0.4);
+      ctx.moveTo(bodyX + bodyWidth, bodyY + bodyHeight * 0.1);
+      ctx.lineTo(bodyX + bodyWidth + bodyWidth * 0.5, bodyY + bodyHeight * 0.4);
+      ctx.stroke();
+
+      // 다리
+      ctx.beginPath();
+      const legY = bodyY + bodyHeight;
+      ctx.moveTo(-bodyWidth * 0.25, legY);
+      ctx.lineTo(-bodyWidth * 0.25, legY + bodyHeight * 0.4);
+      ctx.moveTo(bodyWidth * 0.25, legY);
+      ctx.lineTo(bodyWidth * 0.25, legY + bodyHeight * 0.4);
+      ctx.stroke();
+
+      // 가슴 패널
+      ctx.fillStyle = "#020617";
+      ctx.strokeStyle = "#020617";
+      const panelWidth = bodyWidth * 0.5;
+      const panelHeight = bodyHeight * 0.3;
+      const panelX = -panelWidth / 2;
+      const panelY = bodyY + bodyHeight * 0.15;
+      ctx.beginPath();
+      ctx.rect(panelX, panelY, panelWidth, panelHeight);
+      ctx.fill();
+      ctx.stroke();
+
+      // 패널 버튼
+      ctx.fillStyle = colorType === "player" ? "#22c55e" : "#fb923c";
+      ctx.beginPath();
+      ctx.arc(panelX + panelWidth * 0.3, panelY + panelHeight * 0.5, size * 0.11, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = colorType === "player" ? "#3b82f6" : "#ef4444";
+      ctx.beginPath();
+      ctx.arc(panelX + panelWidth * 0.7, panelY + panelHeight * 0.5, size * 0.11, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.restore();
+    }
+
+    // 노란 별(★) 그리기
+    function drawStarShape(cx, cy, outerRadius, innerRadius, spikes = 5) {
+      let rot = Math.PI / 2 * 3;
+      let x = cx;
+      let y = cy;
+      const step = Math.PI / spikes;
+
+      ctx.beginPath();
+      ctx.moveTo(cx, cy - outerRadius);
+      for (let i = 0; i < spikes; i++) {
+        x = cx + Math.cos(rot) * outerRadius;
+        y = cy + Math.sin(rot) * outerRadius;
+        ctx.lineTo(x, y);
+        rot += step;
+
+        x = cx + Math.cos(rot) * innerRadius;
+        y = cy + Math.sin(rot) * innerRadius;
+        ctx.lineTo(x, y);
+        rot += step;
+      }
+      ctx.lineTo(cx, cy - outerRadius);
+      ctx.closePath();
+    }
+
+    // 벽에서 "벽 타기"를 막기 위한 보정
+    function adjustDirectionAwayFromWall(dir, hitVertical, hitHorizontal) {
+      if (!dir) return null;
+
+      let dx = dir.dx;
+      let dy = dir.dy;
+      const MIN_COMPONENT = 0.35;
+
+      if (hitVertical) {
+        // 좌/우 벽에서 x 성분이 거의 0이면, 안쪽으로 강제
+        if (Math.abs(dx) < MIN_COMPONENT) {
+          dx = (dx >= 0 ? MIN_COMPONENT : -MIN_COMPONENT) || MIN_COMPONENT;
+        }
+      }
+      if (hitHorizontal) {
+        // 위/아래 벽에서 y 성분이 거의 0이면, 안쪽으로 강제
+        if (Math.abs(dy) < MIN_COMPONENT) {
+          dy = (dy >= 0 ? MIN_COMPONENT : -MIN_COMPONENT) || MIN_COMPONENT;
+        }
+      }
+
+      const len = Math.hypot(dx, dy) || 1;
+      return { dx: dx / len, dy: dy / len };
+    }
+
+    function updatePlayer() {
+      // 비행 중에는 방향 변경 없음, 오직 속도만 조정
+      const currentMag = Math.hypot(player.vx, player.vy);
+      const desiredSpeed = currentSpeed();
+      if (currentMag > 0 && Math.abs(currentMag - desiredSpeed) > 0.01) {
+        player.vx = (player.vx / currentMag) * desiredSpeed;
+        player.vy = (player.vy / currentMag) * desiredSpeed;
+      }
+
+      // 이동
+      player.x += player.vx;
+      player.y += player.vy;
+
+      let hitVertical = false;
+      let hitHorizontal = false;
+
+      if (player.x - player.radius < 0) {
+        player.x = player.radius;
+        hitVertical = true;
+      }
+      if (player.x + player.radius > canvas.width) {
+        player.x = canvas.width - player.radius;
+        hitVertical = true;
+      }
+      if (player.y - player.radius < 0) {
+        player.y = player.radius;
+        hitHorizontal = true;
+      }
+      if (player.y + player.radius > canvas.height) {
+        player.y = canvas.height - player.radius;
+        hitHorizontal = true;
+      }
+
+      if (hitVertical || hitHorizontal) {
+        const spd = currentSpeed();
+
+        // 1) 기본: 당구 반사
+        if (hitVertical) player.vx *= -1;
+        if (hitHorizontal) player.vy *= -1;
+
+        // 2) 부딪힌 순간 키가 눌려 있다면 그 방향으로 재조정 (벽 타기 방지)
+        const rawDir = getInputDirection();
+        const dir = adjustDirectionAwayFromWall(rawDir, hitVertical, hitHorizontal);
+
+        if (dir) {
+          player.vx = dir.dx * spd;
+          player.vy = dir.dy * spd;
+        } else {
+          const mag = Math.hypot(player.vx, player.vy) || 1;
+          player.vx = (player.vx / mag) * spd;
+          player.vy = (player.vy / mag) * spd;
+        }
+      }
+    }
+
+    // AI: 벽에 부딪힐 때만 별 쪽으로 재조준 (속도 느림)
+    function updateEnemy() {
+      enemy.x += enemy.vx;
+      enemy.y += enemy.vy;
+
+      let hitVertical = false;
+      let hitHorizontal = false;
+
+      if (enemy.x - enemy.radius < 0) {
+        enemy.x = enemy.radius;
+        hitVertical = true;
+      }
+      if (enemy.x + enemy.radius > canvas.width) {
+        enemy.x = canvas.width - enemy.radius;
+        hitVertical = true;
+      }
+      if (enemy.y - enemy.radius < 0) {
+        enemy.y = enemy.radius;
+        hitHorizontal = true;
+      }
+      if (enemy.y + enemy.radius > canvas.height) {
+        enemy.y = canvas.height - enemy.radius;
+        hitHorizontal = true;
+      }
+
+      if (hitVertical || hitHorizontal) {
+        // 별 쪽으로 향하게 방향 재설정 (느린 속도)
+        let dx = star.x - enemy.x;
+        let dy = star.y - enemy.y;
+        const len = Math.hypot(dx, dy) || 1;
+        enemy.vx = (dx / len) * enemy.baseSpeed;
+        enemy.vy = (dy / len) * enemy.baseSpeed;
+      }
+    }
+
+    function checkStarCollision() {
+      const dPlayer = Math.hypot(player.x - star.x, player.y - star.y);
+      const dEnemy  = Math.hypot(enemy.x  - star.x, enemy.y  - star.y);
+
+      const pickPlayer = dPlayer < player.radius + star.radius;
+      const pickEnemy  = dEnemy  < enemy.radius  + star.radius;
+
+      if (!pickPlayer && !pickEnemy) return;
+
+      // ★ 난이도 하향: 거의 동시에 닿으면 무조건 플레이어 점수
+      if (pickPlayer && pickEnemy) {
+        if (dPlayer <= dEnemy + 5) {  // 여유 5px 정도 버프
+          playerScore += 1;
+        } else {
+          enemyScore += 1;
+        }
+      } else if (pickPlayer) {
+        playerScore += 1;
+      } else if (pickEnemy) {
+        enemyScore += 1;
+      }
+
+      star = spawnStar();
+
+      if (playerScore >= WIN_SCORE || enemyScore >= WIN_SCORE) {
+        gameOver = true;
+        if (playerScore > enemyScore) {
+          winnerMessage = "YOU WIN!";
+        } else if (playerScore < enemyScore) {
+          winnerMessage = "AI WINS!";
+        } else {
+          winnerMessage = "DRAW";
+        }
+      }
+    }
+
+    function update() {
+      if (gameOver) return;
+      updatePlayer();
+      updateEnemy();
+      checkStarCollision();
+    }
+
+    function drawBackgroundStars() {
+      for (let i = 0; i < 40; i++) {
+        const x = (i * 71) % canvas.width;
+        const y = (i * 131) % canvas.height;
+        ctx.fillStyle = i % 2 === 0 ? "rgba(255,255,255,0.3)" : "rgba(180,220,255,0.25)";
+        ctx.fillRect(x, y, 2, 2);
+      }
+    }
+
+    function draw() {
+      ctx.fillStyle = "#000011";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      drawBackgroundStars();
+
+      // 테두리
+      ctx.strokeStyle = "#444";
+      ctx.lineWidth = 4;
+      ctx.strokeRect(0, 0, canvas.width, canvas.height);
+
+      // 별(원 대신 ★)
+      ctx.save();
+      ctx.shadowColor = "#facc15";
+      ctx.shadowBlur = 12;
+      ctx.fillStyle = "#ffd93b";
+      drawStarShape(star.x, star.y, star.radius, star.radius * 0.5, 5);
+      ctx.fill();
+      ctx.shadowBlur = 0;
+      ctx.restore();
+
+      // 캐릭터
+      drawAstronaut(enemy.x, enemy.y, enemy.radius, "enemy");
+      drawAstronaut(player.x, player.y, player.radius, "player");
+
+      // 스코어
+      ctx.fillStyle = "#ffffff";
+      ctx.font = "19px system-ui, sans-serif";
+      ctx.fillText(`YOU: ${playerScore}`, 10, 26);
+      ctx.fillText(`AI : ${enemyScore}`, 10, 50);
+
+      ctx.font = "13px system-ui, sans-serif";
+      ctx.fillText("↑↓←→ : 벽에 닿는 순간에만 방향 변경 가능 (벽 타기 X)", 10, canvas.height - 26);
+      ctx.fillText("Space/Shift : 속도 업, 10점 선취, R로 재시작", 10, canvas.height - 8);
+
+      if (gameOver) {
+        ctx.fillStyle = "#ffffff";
+        ctx.font = "48px system-ui, sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText(winnerMessage, canvas.width / 2, canvas.height / 2 - 10);
+
+        ctx.font = "20px system-ui, sans-serif";
+        ctx.fillText("Press R to Restart", canvas.width / 2, canvas.height / 2 + 30);
+        ctx.textAlign = "start";
+      }
+    }
+
+    function loop(timestamp) {
+      const dt = timestamp - lastTime;
+      lastTime = timestamp;
+      update();
+      draw();
+      requestAnimationFrame(loop);
+    }
+
+    resetGame();
+    requestAnimationFrame(loop);
+  </script>
+</body>
+</html>
